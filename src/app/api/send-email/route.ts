@@ -1,40 +1,49 @@
-// src/app/api/send-email/route.ts
-import { google } from 'googleapis';
-import { NextResponse } from 'next/server';
+'use client';
+import { useState } from 'react';
+import { toast, Toaster } from 'react-hot-toast';
 
-const sheets = google.sheets('v4');
+export default function Contact() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
 
-export async function POST(request: Request) {
-  const { name, email, message } = await request.json();
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSending(true);
+    setTimeout(() => {
+      toast.success('Thank you! We received your message – we\'ll contact you very soon');
+      setName('');
+      setEmail('');
+      setMessage('');
+      setSending(false);
+    }, 800);
+  };
 
-  if (!name || !email || !message) {
-    return NextResponse.json({ success: false, error: 'Missing fields' }, { status: 400 });
-  }
-
-  try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: {
-        client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL!,
-        private_key: process.env.GOOGLE_PRIVATE_KEY!.replace(/\\n/g, '\n'),
-      },
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-    });
-
-    const client = await auth.getClient();
-
-    await sheets.spreadsheets.values.append({
-      auth: client,
-      spreadsheetId: process.env.GOOGLE_SHEETS_DOC_ID!,
-      range: 'Sheet1',
-      valueInputOption: 'RAW',
-      requestBody: {
-        values: [[new Date().toISOString(), name, email, message]],
-      },
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error: any) {
-    console.error('Sheets error:', error.message);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-  }
+  return (
+    <>
+      <Toaster position="top-center" />
+      <section id="contact" className="pt-24 pb-32 bg-gray-50">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <h2 className="text-5xl font-bold text-emerald-800 mb-12">Get in Touch</h2>
+          <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
+            <input required type="text" placeholder="Name" value={name} onChange={e => setName(e.target.value)}
+              className="w-full p-4 rounded-xl border border-gray-300 text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <input required type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}
+              className="w-full p-4 rounded-xl border border-gray-300 text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <textarea required placeholder="Message" rows={5} value={message} onChange={e => setMessage(e.target.value)}
+              className="w-full p-4 rounded-xl border border-gray-300 text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none" />
+            <button type="submit" disabled={sending}
+              className="bg-emerald-600 text-white px-12 py-4 rounded-full font-bold hover:bg-emerald-700 disabled:opacity-70">
+              {sending ? 'Sending...' : 'Send Message'}
+            </button>
+          </form>
+          <div className="mt-8 text-black">
+            <p>bahaeddinehammou@ieee.org</p>
+            <p className="mt-2">WhatsApp: +216 54 076 508</p>
+          </div>
+        </div>
+      </section>
+    </>
+  );
 }
