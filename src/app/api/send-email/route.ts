@@ -1,41 +1,8 @@
-import { GoogleSpreadsheet } from 'google-spreadsheet';
+// src/app/api/send-email/route.ts
+import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
 
-// Create doc instance
-const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEETS_DOC_ID!);
-
-async function appendToSheet(data: { name: string; email: string; message: string }) {
-  console.log('Authenticating with Google...');
-  
-  // v4 syntax — CORRECT
-  await doc.useServiceAccountAuth({
-    client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL!,
-    private_key: process.env.GOOGLE_PRIVATE_KEY!.replace(/\\n/g, '\n'),
-  });
-
-  console.log('Loading spreadsheet...');
-  await doc.loadInfo();
-  console.log('Spreadsheet title:', doc.title);
-
-  const sheet = doc.sheetsByIndex[0];
-  console.log('Using sheet:', sheet.title);
-
-  // Add header if empty
-  if ((await sheet.rowCount) === 0) {
-    console.log('Adding header row...');
-    await sheet.setHeaderRow(['Timestamp', 'Name', 'Email', 'Message']);
-  }
-
-  console.log('Appending data:', data);
-  await sheet.addRow({
-    Timestamp: new Date().toISOString(),
-    Name: data.name,
-    Email: data.email,
-    Message: data.message,
-  });
-
-  console.log('SUCCESS: Row added to Google Sheets!');
-}
+const sheets = google.sheets('v4');
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -46,10 +13,29 @@ export async function POST(request: Request) {
   }
 
   try {
-    await appendToSheet(body);
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL!,
+        private_key: process.env.GOOGLE_PRIVATE_KEY!.replace(/\\n/g, '\n'),
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+
+    const client = await auth.getClient();
+
+    await sheets.spreadsheets.values.append({
+      auth: client,
+      spreadsheetId: process.env.GOOGLE_SHEETS_DOC_ID!,
+      range: 'Sheet1',                   // ← make sure your tab is named Sheet1
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [[new Date().toISOString(), name, email, message]],
+      },
+    });
+
     return NextResponse.json({ success: true });
-  } catch (e: any) {
-    console.error('FULL ERROR:', e);
-    return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+  } catch (error: any) {
+    console.error('Google Sheets error:', error.message);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
