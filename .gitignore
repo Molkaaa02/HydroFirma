@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# === for safety ===
+google-credentials.json
+google-credentials.json.json
+*.json.json
+# ============================
