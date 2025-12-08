@@ -29,4 +29,11 @@
     "tailwindcss": "^4",
     "typescript": "^5"
   }
+  {
+  "dependencies": {
+    "next": "^16.1.0",  // ← Latest as of Dec 2025
+    "react": "^19.0.0-rc",
+    "react-dom": "^19.0.0-rc"
+  }
+}
 }
