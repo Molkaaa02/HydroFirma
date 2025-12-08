@@ -1,7 +1,8 @@
 import './globals.css';
+import FloatingDecorations from '@/components/FloatingDecorations';   // ← NEW LINE
 
 export const metadata = {
-  title: 'HydroFirma',          
+  title: 'HydroFirma',
   description: 'AI-Powered Hydroponics for Water-Scarcity',
 };
 
@@ -13,10 +14,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Optional: Favicon (if you added it) */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
-      <body>{children}</body>
+      <body className="relative min-h-screen bg-gray-50">
+        {/* This makes tomatoes, water drops & leaves float on every page */}
+        <FloatingDecorations />
+        {children}
+      </body>
     </html>
   );
 }
